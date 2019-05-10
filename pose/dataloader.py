@@ -1,16 +1,3 @@
-'''
-File: dataloader.py
-Project: MobilePose-PyTorch
-File Created: Tuesday, 15th January 2019 6:26:25 pm
-Author: Yuliang Xiu (yuliangxiu@sjtu.edu.cn)
------
-Last Modified: Monday, 11th March 2019 12:51:19 am
-Modified By: Yuliang Xiu (yuliangxiu@sjtu.edu.cn>)
------
-Copyright 2018 - 2019 Shanghai Jiao Tong University, Machine Vision and Intelligence Group
-'''
-
-
 import csv
 import numpy as np
 import os

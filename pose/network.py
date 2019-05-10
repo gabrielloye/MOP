@@ -1,17 +1,3 @@
-'''
-File: network.py
-Project: MobilePose-PyTorch
-File Created: Thursday, 7th March 2019 6:33:57 pm
-Author: Yuliang Xiu (yuliangxiu@sjtu.edu.cn)
------
-Last Modified: Monday, 11th March 2019 12:50:40 am
-Modified By: Yuliang Xiu (yuliangxiu@sjtu.edu.cn>)
------
-Copyright 2018 - 2019 Shanghai Jiao Tong University, Machine Vision and Intelligence Group
-'''
-
-
-
 from networks import *
 from networks.senet import se_resnet
 import torch.nn as nn
@@ -57,5 +43,7 @@ class CoordRegressionNetwork(nn.Module):
         heatmaps = dsntnn.flat_softmax(unnormalized_heatmaps)
         # 4. Calculate the coordinates
         coords = dsntnn.dsnt(heatmaps)
+
+        heatmaps = dsntnn.variance_reg_losses(heatmaps, 0.1)
 
         return coords, heatmaps

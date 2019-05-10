@@ -1,16 +1,3 @@
-'''
-File: estimator.py
-Project: MobilePose-PyTorch
-File Created: Monday, 11th March 2019 12:50:16 am
-Author: Yuliang Xiu (yuliangxiu@sjtu.edu.cn)
------
-Last Modified: Monday, 11th March 2019 12:50:58 am
-Modified By: Yuliang Xiu (yuliangxiu@sjtu.edu.cn>)
------
-Copyright 2018 - 2019 Shanghai Jiao Tong University, Machine Vision and Intelligence Group
-'''
-
-
 import itertools
 import logging
 import math
@@ -66,10 +53,13 @@ class ResEstimator:
         pose_fun = rescale_out['pose_fun']
 
         keypoints = self.net(image)
-        keypoints = keypoints[0].detach().numpy()
-        keypoints = pose_fun(keypoints).astype(int)
 
-        return keypoints
+        outkeypoints = keypoints[0].detach().numpy()
+        outkeypoints = pose_fun(outkeypoints).astype(int)
+        for i in range(16):
+            if keypoints[1][0][i].item() > 300:
+                outkeypoints[i]=np.array([0,0])
+        return outkeypoints
 
     @staticmethod
     def draw_humans(npimg, pose, imgcopy=False):
@@ -77,11 +67,9 @@ class ResEstimator:
             npimg = np.copy(npimg)
         image_h, image_w = npimg.shape[:2]
         centers = {}
-
         colors = [[255, 0, 0], [255, 85, 0], [255, 170, 0], [255, 255, 0], [170, 255, 0], [85, 255, 0], [0, 255, 0],
               [0, 255, 85], [0, 255, 170], [0, 255, 255], [0, 170, 255], [0, 85, 255], [0, 0, 255], [85, 0, 255],
               [170, 0, 255], [255, 0, 255]]
-
         pairs = [[8,9],[11,12],[11,10],[2,1],[1,0],[13,14],[14,15],[3,4],[4,5],[8,7],[7,6],[6,2],[6,3],[8,12],[8,13]]
         colors_skeleton = ['r', 'y', 'y', 'g', 'g', 'y', 'y', 'g', 'g', 'm', 'm', 'g', 'g', 'y','y']
         colors_skeleton = [[255, 0, 0], [255, 85, 0], [255, 170, 0], [255, 255, 0], [170, 255, 0], [85, 255, 0], [0, 255, 0],
@@ -89,9 +77,11 @@ class ResEstimator:
               [170, 0, 255]]
 
         for idx in range(len(colors)):
-            cv2.circle(npimg, (pose[idx,0], pose[idx,1]), 3, colors[idx], thickness=3, lineType=8, shift=0)
+            if pose[idx,0] != 0 and pose[idx,1] != 0:
+                cv2.circle(npimg, (pose[idx,0], pose[idx,1]), 3, colors[idx], thickness=2, lineType=8, shift=0)
         for idx in range(len(colors_skeleton)):
-            npimg = cv2.line(npimg, (pose[pairs[idx][0],0], pose[pairs[idx][0],1]), (pose[pairs[idx][1],0], pose[pairs[idx][1],1]), colors_skeleton[idx], 3)
+            if 0 not in [pose[pairs[idx][0],0], pose[pairs[idx][0],1], pose[pairs[idx][1],0], pose[pairs[idx][1],1]]:
+                npimg = cv2.line(npimg, (pose[pairs[idx][0],0], pose[pairs[idx][0],1]), (pose[pairs[idx][1],0], pose[pairs[idx][1],1]), colors_skeleton[idx], 1)
 
         return npimg
 

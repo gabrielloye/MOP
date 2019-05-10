@@ -18,7 +18,7 @@ def detect(
         nms_thres=0.5,
         save_txt=False,
         save_images=True,
-        webcam=True
+        webcam=False
 ):
     device = torch_utils.select_device()
     if os.path.exists(output):
@@ -53,9 +53,10 @@ def detect(
     vid_path, vid_writer = None, None
     if webcam:
         save_images = False
-        dataloader = LoadVideo(img_size=img_size, video_path='./videos/EnterExitCrossingPaths2cor.mpg')
+        dataloader = LoadWebcam('http://192.168.0.196:4747/video', img_size=img_size)
     else:
-        dataloader = LoadImages(images, img_size=img_size)
+        save_images = False
+        dataloader = LoadVideo(img_size=img_size, video_path='./videos/EnterExitCrossingPaths2cor.mpg')
 
     # Get classes and colors
     classes = load_classes(parse_data_cfg(data_cfg)['names'])
@@ -86,7 +87,8 @@ def detect(
                     with open(save_path + '.txt', 'a') as file:
                         file.write(('%g ' * 6 + '\n') % (*xyxy, cls, conf))
                 cropped_img = im0[int(xyxy[1].item())-20:int(xyxy[3].item())+20, int(xyxy[0].item())-15:int(xyxy[2].item())+15]
-                cv2.imshow(str(i), get_pose(cropped_img, estimator))
+                if 0 not in cropped_img.shape[:2]:
+                    cv2.imshow(str(i), get_pose(cropped_img, estimator))
                 i += 1
     
             for *xyxy, conf, cls_conf, cls in det:
@@ -95,9 +97,7 @@ def detect(
                 plot_one_box(xyxy, im0, label=label, color=colors[int(cls)])
 
         print('Done. (%.3fs)' % (time.time() - t))
-
-        if webcam:  # Show live webcam
-            cv2.imshow(weights, im0)
+        cv2.imshow(weights, im0)
 
         if save_images:  # Save generated image with detections
             if dataloader.mode == 'video':
@@ -131,7 +131,8 @@ if __name__ == '__main__':
     parser.add_argument('--nms-thres', type=float, default=0.5, help='iou threshold for non-maximum suppression')
     opt = parser.parse_args()
     print(opt)
-    estimator = get_model()
+    device = torch_utils.select_device()
+    estimator = get_model(device)
 
     with torch.no_grad():
         detect(

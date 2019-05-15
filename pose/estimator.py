@@ -40,7 +40,7 @@ class ResEstimator:
         image = torch.from_numpy(((image-mean)/std).transpose((2, 0, 1))).float()
         return image
 
-    def inference(self, in_npimg):
+    def inference(self, in_npimg, device):
         canvas = np.zeros_like(in_npimg)
         height = canvas.shape[0]
         width = canvas.shape[1]
@@ -49,12 +49,12 @@ class ResEstimator:
        
         image = rescale_out['image']
         image = self.to_tensor(image)
-        image = image.unsqueeze(0)
+        image = image.unsqueeze(0).to(device)
         pose_fun = rescale_out['pose_fun']
 
         keypoints = self.net(image)
 
-        outkeypoints = keypoints[0].detach().numpy()
+        outkeypoints = keypoints[0].cpu().detach().numpy()
         outkeypoints = pose_fun(outkeypoints).astype(int)
         for i in range(16):
             if keypoints[1][0][i].item() > 300:

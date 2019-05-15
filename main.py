@@ -7,6 +7,8 @@ from utils.datasets import *
 from utils.utils import *
 from pose.run_webcam import *
 
+from human_tracker import *
+
 def detect(
         cfg,
         data_cfg,
@@ -62,7 +64,9 @@ def detect(
     classes = load_classes(parse_data_cfg(data_cfg)['names'])
     colors = [[random.randint(0, 255) for _ in range(3)] for _ in range(len(classes))]
 
+    detections = []
     for i, (path, img, im0, vid_cap) in enumerate(dataloader):
+        dimensions = [im0.shape[1],im0.shape[0]] # width, height of original feed
         t = time.time()
         save_path = str(Path(output) / Path(path).name)
 
@@ -82,22 +86,34 @@ def detect(
 
             # Draw bounding boxes and labels of detections
             i = 0
+
+            coordinates = []
             for *xyxy, conf, cls_conf, cls in det:
                 if save_txt:  # Write to file
                     with open(save_path + '.txt', 'a') as file:
                         file.write(('%g ' * 6 + '\n') % (*xyxy, cls, conf))
                 cropped_img = im0[int(xyxy[1].item())-20:int(xyxy[3].item())+20, int(xyxy[0].item())-15:int(xyxy[2].item())+15]
                 if 0 not in cropped_img.shape[:2]:
-                    cv2.imshow(str(i), get_pose(cropped_img, estimator))
+                    out, coordinate = get_pose(cropped_img, estimator, device)
+                    cv2.imshow(str(i),out)
+                    xxyy = relative_bbox(xyxy, dimensions)
+                    temp_dict = {
+                        'coordinate': coordinate,
+                        'bbox': xxyy,
+                        'count': 0
+                    }
+                    coordinates.append(temp_dict)
                 i += 1
     
             for *xyxy, conf, cls_conf, cls in det:
                 # Add bbox to the image
                 label = '%s %.2f' % (classes[int(cls)], conf)
                 plot_one_box(xyxy, im0, label=label, color=colors[int(cls)])
-
+        detections = track(coordinates, detections, dimensions)
         print('Done. (%.3fs)' % (time.time() - t))
         cv2.imshow(weights, im0)
+
+        print(detections)
 
         if save_images:  # Save generated image with detections
             if dataloader.mode == 'video':
@@ -113,7 +129,6 @@ def detect(
 
             else:
                 cv2.imwrite(save_path, im0)
-
     if save_images:
         print('Results saved to %s' % os.getcwd() + os.sep + output)
         if platform == 'darwin':  # macos

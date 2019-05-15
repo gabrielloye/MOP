@@ -29,12 +29,12 @@ def get_model(device):
     return e
 
 
-def get_pose(cropped_img, e):
+def get_pose(cropped_img, e, device):
     try:
-        humans = e.inference(cropped_img)
+        humans = e.inference(cropped_img, device)
         image = ResEstimator.draw_humans(cropped_img, humans, imgcopy=False)
     except Exception as err:
         print(err)
         image = cropped_img
-    return image
+    return image, humans
 

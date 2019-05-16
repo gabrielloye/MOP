@@ -11,7 +11,7 @@ import torch.nn as nn
 from torchvision import models
 
 import sys
-sys.path.append('C:/projects/mop/pose')
+sys.path.append(os.path.join(os.getcwd(),'pose'))
 
 from estimator import ResEstimator
 from networks import *

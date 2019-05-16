@@ -100,6 +100,7 @@ def detect(
                     temp_dict = {
                         'coordinate': coordinate,
                         'bbox': xxyy,
+                        'dimensions': xyxy,
                         'count': 0
                     }
                     coordinates.append(temp_dict)
@@ -112,8 +113,6 @@ def detect(
         detections = track(coordinates, detections, dimensions)
         print('Done. (%.3fs)' % (time.time() - t))
         cv2.imshow(weights, im0)
-
-        print(detections)
 
         if save_images:  # Save generated image with detections
             if dataloader.mode == 'video':

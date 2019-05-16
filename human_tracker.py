@@ -1,7 +1,10 @@
+import math
+
 def track(coordinates, detections, dimensions):
     if detections == []:
         det = coordinates
         return det
+    
     det = []
     newstuff = coordinates[:]
 
@@ -13,21 +16,21 @@ def track(coordinates, detections, dimensions):
         for i, new in enumerate(coordinates):
             if new != 0:
                 if get_bbox_similarity(existing['bbox'], new['bbox']):
-                    if get_pose_similarity(existing['coordinate'], new['coordinate']):
+                    if get_pose_similarity(existing, new):
                         found = True
                         if 'hidden' in existing:
-                            print('continued')
+                            #print('continued')
                             #output, hidden = model(new['coordinate'], existing['hidden']) --> this will be used if a hidden is already in
-                            new['hidden'] = 0
+                            new['hidden'] = 0 #replace zero with hidden obtained
                             det.append(new)
                             coordinates[i] = 0
                             continue
                         else:
-                            print('new tracked')
+                            #print('new tracked')
                             #h = model.init_hidden
                             #output,hidden = model(exisiting['coordinate'], h) --> get the hidden state from the existing coordinates
                             #output, hidden = model(new['coordinate'], hidden)
-                            new['hidden'] = 0
+                            new['hidden'] = 0 #replace zero with hidden obtained
                             det.append(new)
                             coordinates[i] = 0
                             continue
@@ -42,7 +45,30 @@ def track(coordinates, detections, dimensions):
     return det
 
 def get_pose_similarity(existing, new):
-    return True
+    xyxy = new['dimensions']
+    diagonal = 0.1 * math.sqrt((xyxy[2]-xyxy[0])**2 + (xyxy[3]-xyxy[1])**2)
+    similarity = []
+    new = new['coordinate']
+    existing = existing['coordinate']
+    for i in range(16):
+        if existing[i][0] == 0 and existing [i][1] == 0:
+            continue
+        if new[i][0] == 0 and new[i][1] == 0:
+            continue
+        joint_diff = math.sqrt((abs(new[i][0]-existing[i][0]))**2 + abs(new[i][1]-existing[i][1])**2)
+        if joint_diff >= diagonal:
+            similarity.append(0)
+        else:
+            similarity.append((1-(joint_diff/diagonal)))
+    if len(similarity) == 0:
+        return False
+    score = sum(similarity)/len(similarity)
+    if score >= 0.15:
+        print('similar skeleton')
+        return True
+    else:
+        print('different skeleton')
+        return False
 
 def get_bbox_similarity(existing, new):
     if existing == new:
